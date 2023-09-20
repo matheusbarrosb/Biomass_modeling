@@ -29,7 +29,7 @@ real mu[N_obs];
 
 for (i in 1:N_obs) {
    
-mu[i] = alpha + beta_site[site[i]]*age[i];
+  mu[i] = alpha + beta_site[site[i]]*age[i];
 
 }
 
@@ -38,18 +38,18 @@ mu[i] = alpha + beta_site[site[i]]*age[i];
 model {
 
 alpha ~ normal(5, sigma_alpha);
-sigma_alpha ~ uniform(0,10)
+sigma_alpha ~ cauchy(0,1);
 beta_site ~ normal(0.5, sigma_rd);
 
 for (i in 1:N_sites) {
 
-sigma_rd[i] ~ uniform(0,10)
+  sigma_rd[i] ~ cauchy(0,1);
 
 }
 
 for (i in 1:N_obs) {
 
-TL[i] ~ normal(mu[i], sigma); // LIKELIHOOD
+  TL[i] ~ normal(mu[i], sigma); // LIKELIHOOD
 
 }
 
@@ -61,18 +61,16 @@ vector[N_obs] y_hat;
 
 for (i in 1:N_obs) {
 
-y_hat[i] = alpha + beta_site[site[i]]*age[i]; // POSTERIOR PREDICTIVE 
+  y_hat[i] = alpha + beta_site[site[i]]*age[i]; // POSTERIOR PREDICTIVE 
 
 }
 
 }
 ",
-"
-modelstring.stan
-")
+"LMM.stan")
 
 
-stanc('modelstring.stan')
+stanc('LMM.stan')
 
 # WRANGLE DATA -----------------------------------------------------------------
 OM <- na.exclude(OM)
@@ -81,12 +79,12 @@ age <- OM$Age
 site <- as.numeric(as.factor(OM$Site))
 G <- OM$TL/OM$Age
 
-plot(G ~ TL)
+plot(TL ~ age)
 
 datalist <- list(N_obs = length(TL), N_sites = length(unique(site)),
                  TL = TL, age = age, site = site)
 
-res <- stan(file = 'modelstring.stan', data = datalist, pars = c("beta_site","alpha"),
+res <- stan(file = 'LMM.stan', data = datalist, pars = c("beta_site","alpha"),
                 chains = 3, iter = 10000, warmup = 1000, thin = 1)
 
 stan_dens(res, pars = "beta_site")
