@@ -15,7 +15,8 @@ stoch_P <- function(GR.mu = NULL, GR.sd = NULL,
                     L0.mu = NULL, L0.sd = NULL,
                     K_sup.mu = NULL, K_sup.sd = NULL,
                     t.steps = NULL, N = 100,
-                    plot = FALSE, N_years = NULL) {
+                    plot = FALSE, N_years = NULL,
+                    progress = "TRUE") {
   
   # set error and warning messages
   if (GR.mu <= 0) {stop("Growth rate (GR) must be a positive number")}
@@ -28,7 +29,7 @@ stoch_P <- function(GR.mu = NULL, GR.sd = NULL,
   if (Linf.mu <= Lm.mu) {stop("Length at maturity (Lm) must be smaller than Linf")}
   if (is.null(lwa.mu) & is.null(lwb.mu)) {
     lwa.mu <- 0.001; lwb.mu = 3
-    warning("Length-weight relationship not provided: the simulation is assuming isometry")
+    warning("Length-weight parameters not provided: the simulation is assuming isometry")
   }
   if (L0.mu <= 0) {stop("Initial size (L0) must be a positive number")}
   if (L0.mu >= Lm.mu) {stop("Initial size (L0) must be smaller than length at maturity (Lm)")}
@@ -75,8 +76,9 @@ stoch_P <- function(GR.mu = NULL, GR.sd = NULL,
     
     out.df <- cbind(out.df, out$sim_values$GP, deparse.level = 0)
     
+    if (progress == "TRUE") {
     setTxtProgressBar(pb, i)
-    
+    }
   }
   
   close(pb)
@@ -85,7 +87,14 @@ stoch_P <- function(GR.mu = NULL, GR.sd = NULL,
   Bacc.up <- apply(out.df,1,quantile, probs = c(.8), na.rm = TRUE)
   Bacc.low <- apply(out.df,1,quantile, probs = c(.2), na.rm = TRUE)
   
-  Bacc.out <- data.frame(Bacc.mu, Bacc.low, Bacc.up) # main function output
+  Bacc.out <- data.frame(Bacc.mu, Bacc.low, Bacc.up) # df with integrated biomass trajectories
+  GP <- c(max(Bacc.mu), max(Bacc.low), max(Bacc.up)) # accumulated biomass
+  names(Bacc.out) <- c("Mean", "Lower", "Upper")
+  names(GP) <- c("Mean", "Lower", "Upper")
+  
+  output <- list(GP, Bacc.out) # main function output
+  
+  par(mfrow = c(1,2))
   
   plot(Bacc.mu, type = "l", lty = 1,
        lwd = 1.5, ylim = c(0,max(Bacc.up)),
@@ -94,13 +103,24 @@ stoch_P <- function(GR.mu = NULL, GR.sd = NULL,
   lines(Bacc.low, lty = 3)
   lines(Bacc.up, lty = 3)
   
-  return(Bacc.out)
+  plot(density(rnorm(N, mean = GP[1], sd = (GP[3] - GP[2])/3.92)),
+       main = "Gross biomass production", col = "black",
+       ylab = "Probability density", xlab = "GP")
+      abline(v = GP[1], col="red", lwd=2, lty=2)
+      legend("topleft", legend=c("Mean"),
+             col=c("red"), lty=2, cex=0.8)
+  
+  return(output)
   
 }
 
 #test
-b <- stoch_P(GR.mu = 0.45, GR.sd = 0.01, N0.mu = 1, N0.sd = 0.001, M_ref.mu = 1.6, M_ref.sd = 0.05, L_ref.mu = 120, L_ref.sd = 0, Lm.mu = 120, Lm.sd = 0,
-             K.mu = 0.33, K.sd = 0.01, Linf.mu = 200, Linf.sd = 0.20, t0.mu = 0, t0.sd = 0, lwa.mu = 0.0064, lwa.sd = 0.00001, lwb.mu = 3.2, lwb.sd = 0.01,
-             L0.mu = 30, L0.sd = 0, K_sup.mu = 40, K_sup.sd = 0, N = 100, N_years = 10)
+b <- stoch_P(GR.mu = 0.45, GR.sd = 0.03, N0.mu = 1, N0.sd = 0.01,
+             M_ref.mu = 1.6, M_ref.sd = 0.01, L_ref.mu = 120, L_ref.sd = 5,
+             Lm.mu = 120, Lm.sd = 0, K.mu = 0.33, K.sd = 0.05, Linf.mu = 200,
+             Linf.sd = 30, t0.mu = 0, t0.sd = 0, lwa.mu = 0.005,
+             lwa.sd = 0.0001, lwb.mu = 3.25, lwb.sd = 0.06,
+             L0.mu = 30, L0.sd = 0, K_sup.mu = 40, K_sup.sd = 0,
+             N = 1000, N_years = 10, progress = "TRUE")
 
-
+b
