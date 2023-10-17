@@ -129,8 +129,17 @@ sensitivity <- function(par_to_vary, input_range = c(0,100), baseline = list(mea
   GP_df$low_rel <- -((baseline_GP_low - GP_df$low_GP)/GP_df$low_GP)*100
   GP_df$up_rel <- -((baseline_GP_up - GP_df$high_GP)/GP_df$high_GP)*100
   
-  output <- list(time.taken, GP_df)
-  names(output) <- c("Run time", "Sensitivity output")
+  # numerical approximation of sensitivity measure (S) through finite differences
+  norm_range <- NULL
+  for (i in 1:N_sim) {
+    norm_range[i] <- ((range[i] - min(range))/(max(range) - min(range)))*100
+    # compute normalized range
+  }
+  S <- abs(GP_df$mean_rel[N_sim] - GP_df$mean_rel[1])/(norm_range[N_sim] - norm_range[1])
+  
+  # organize outputs
+  output <- list(time.taken, GP_df, S)
+  names(output) <- c("Run time", "Sensitivity output", "Sensitivity measure")
   
   # plotting
   par(mfrow = c(1,1))
@@ -147,30 +156,47 @@ sensitivity <- function(par_to_vary, input_range = c(0,100), baseline = list(mea
   
 }
 
-a <- sensitivity(par_to_vary = "K", input_range = c(0.25,0.4), 
-                 baseline = list(mean = 0.33, low = 0.3, up = 0.35),
-              GR.mu = 0.45, GR.sd = 0.03, N0.mu = 1, N0.sd = 0.01,
-             M_ref.mu = 1.6, M_ref.sd = 0.05, L_ref.mu = 120, L_ref.sd = 5,
-             Lm.mu = 120, Lm.sd = 0, K.mu = 0.33, K.sd = 0.1, Linf.mu = 200,
-             Linf.sd = 30, t0.mu = 0, t0.sd = 0, lwa.mu = 0.005,
-             lwa.sd = 0.000000001, lwb.mu = 3.25, lwb.sd = 0.1,
-             L0.mu = 20, L0.sd = 0,
-             N_sim = 100, N_ite = 500)
+a <- sensitivity(par_to_vary = "GR", input_range = c(0.4,0.6), 
+                 baseline = list(mean = 0.5, low = 0.45, up = 0.55),
+                GR.mu = 0.45, GR.sd = 0.03, N0.mu = 1, N0.sd = 0.01,
+                M_ref.mu = 1.6, M_ref.sd = 0.05, L_ref.mu = 120, L_ref.sd = 5,
+                Lm.mu = 120, Lm.sd = 5, K.mu = 0.33, K.sd = 0.1, Linf.mu = 200,
+                Linf.sd = 30, t0.mu = 0, t0.sd = 0, lwa.mu = 0.005,
+                lwa.sd = 0.000000001, lwb.mu = 3.25, lwb.sd = 0.1,
+                L0.mu = 20, L0.sd = 0,
+                N_sim = 5, N_ite = 100)
 
 
-a
 
-plot(a$mean_GP ~ a$range)
+b <- sensitivity(par_to_vary = "Lm", input_range = c(100,140), 
+                 baseline = list(mean = 120, low = 110, up = 130),
+                 GR.mu = 0.45, GR.sd = 0.03, N0.mu = 1, N0.sd = 0.01,
+                 M_ref.mu = 1.6, M_ref.sd = 0.05, L_ref.mu = 120, L_ref.sd = 5,
+                 Lm.mu = 120, Lm.sd = 5, K.mu = 0.33, K.sd = 0.1, Linf.mu = 200,
+                 Linf.sd = 30, t0.mu = 0, t0.sd = 0, lwa.mu = 0.005,
+                 lwa.sd = 0.000000001, lwb.mu = 3.25, lwb.sd = 0.1,
+                 L0.mu = 20, L0.sd = 0,
+                 N_sim = 5, N_ite = 100)
 
-start.time <- Sys.time()
+c <- sensitivity(par_to_vary = "K", input_range = c(0.25,0.41), 
+                 baseline = list(mean = 0.33, low = 0.3, up = 0.36),
+                 GR.mu = 0.45, GR.sd = 0.03, N0.mu = 1, N0.sd = 0.01,
+                 M_ref.mu = 1.6, M_ref.sd = 0.05, L_ref.mu = 120, L_ref.sd = 5,
+                 Lm.mu = 120, Lm.sd = 5, K.mu = 0.33, K.sd = 0.1, Linf.mu = 200,
+                 Linf.sd = 30, t0.mu = 0, t0.sd = 0, lwa.mu = 0.005,
+                 lwa.sd = 0.000000001, lwb.mu = 3.25, lwb.sd = 0.1,
+                 L0.mu = 20, L0.sd = 0,
+                 N_sim = 5, N_ite = 100)
 
-# Your R code here
-result <- sum(1:10000)
-
-end.time <- Sys.time()
-time.taken <- round(end.time - start.time,2)
-time.taken
-
+d <- sensitivity(par_to_vary = "Linf", input_range = c(150,250), 
+                 baseline = list(mean = 200, low = 180, up = 220),
+                 GR.mu = 0.45, GR.sd = 0.03, N0.mu = 1, N0.sd = 0.01,
+                 M_ref.mu = 1.6, M_ref.sd = 0.05, L_ref.mu = 120, L_ref.sd = 5,
+                 Lm.mu = 120, Lm.sd = 5, K.mu = 0.33, K.sd = 0.1, Linf.mu = 200,
+                 Linf.sd = 30, t0.mu = 0, t0.sd = 0, lwa.mu = 0.005,
+                 lwa.sd = 0.000000001, lwb.mu = 3.25, lwb.sd = 0.1,
+                 L0.mu = 20, L0.sd = 0,
+                 N_sim = 5, N_ite = 100)
 
 
 
